@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { usersCollection } from "@/services/server/users";
+import { ObjectId } from "mongodb";
 
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
-    const { email, name, gender, profileImage } = body;
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+const cookieStore = await cookies();
+const userId = cookieStore.get("userId")?.value;
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { name, gender, profileImage } = await req.json();
 
     const col = await usersCollection();
 
     const result = await col.updateOne(
-      { email },
-      { $set: { name, gender,profileImage, updatedAt: new Date() } }
+      { _id: new ObjectId(userId) },
+      {
+        $set: {
+          name,
+          gender,
+          profileImage,
+          updatedAt: new Date(),
+        },
+      }
     );
 
     if (result.matchedCount === 0) {

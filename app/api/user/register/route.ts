@@ -1,58 +1,45 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { usersCollection } from "@/services/server/users";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, email, password, gender, profileImage } = body;
+    const { email, password, name, profileImage } = await req.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
     const col = await usersCollection();
     const now = new Date();
 
-    const existingUser = await col.findOne({ email });
+    let user = await col.findOne({ email });
 
-    if (existingUser) {
-      await col.updateOne(
-        { email },
-        {
-          $set: {
-            name: name || existingUser.name,
-            gender: gender || existingUser.gender,
-            profileImage: profileImage || existingUser.profileImage,
-            updatedAt: now,
-          },
-        }
-      );
+    if (!user) {
+      const passwordHash = password ? await bcrypt.hash(password, 10) : null;
 
-      return NextResponse.json({ ok: true, exists: true, message: "User updated" });
+      const result = await col.insertOne({
+        email,
+        name: name || null,
+        profileImage: profileImage || null,
+        passwordHash,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      user = { _id: result.insertedId, email };
     }
 
-    const passwordHash = password ? await bcrypt.hash(password, 10) : null;
-
-    await col.insertOne({
-      name: name || null,
-      email,
-      passwordHash,
-      gender: gender || null,
-      profileImage: profileImage || null,
-      createdAt: now,
-      updatedAt: now,
+    const cookieStore = await cookies();
+    cookieStore.set("userId", user._id.toString(), {
+      httpOnly: true,
+      path: "/",
     });
 
-    return NextResponse.json({ ok: true, exists: false, message: "User created" });
+    return NextResponse.json({ ok: true, userExists: !!user });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Server error", ok: false },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server error", ok: false }, { status: 500 });
   }
 }

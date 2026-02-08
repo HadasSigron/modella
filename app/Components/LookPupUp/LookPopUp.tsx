@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ShareLookType } from "@/types/shareLookType";
+import { useToast } from "../Toast/ToastProvider";
 import styles from "./LookPopUp.module.css";
 import { LikeButton, CommentForm } from "../LikeAndComment/LikeAndComment";
 import { useUserStore } from "@/store/userStore";
@@ -25,7 +26,8 @@ export default function LookPopup({ look, onClose }: Props) {
   const [name, setName] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
-
+  const [isOpen, setIsOpen] = useState(false);
+  const { showToast } = useToast();
   const user = useUserStore((state) => state.user);
   const userIdFromStore = useUserStore((state) => state.userId);
 
@@ -37,12 +39,11 @@ export default function LookPopup({ look, onClose }: Props) {
 
   const handleShareAll = () => {
     if (!look._id) {
-      alert("This look is not shared with everyone yet!");
+      showToast("This look is not shared with everyone yet!", "error");
       return;
     }
     router.push(`/sharelookall/${look._id}`);
   };
-
   return (
     <div className={styles.modalBackdrop} onClick={onClose} role="presentation">
       <div
@@ -52,13 +53,17 @@ export default function LookPopup({ look, onClose }: Props) {
         aria-modal="true"
         aria-label="Look preview"
       >
-        <button className={styles.closeX} onClick={onClose} aria-label="Close look preview" type="button">
+        <button
+          className={styles.closeX}
+          onClick={onClose}
+          aria-label="Close look preview"
+          type="button"
+        >
           ✕
         </button>
 
         <h2 className={styles.modalTitle}>Look Preview</h2>
 
-        {/* Items grid */}
         <div className={styles.modalGrid}>
           {itemsArray.map((item) => (
             <div key={item._id} className={styles.modalItem}>
@@ -71,14 +76,34 @@ export default function LookPopup({ look, onClose }: Props) {
           ))}
         </div>
 
-        <div className={styles.createLook}>
-          <button type="button" onClick={handleShareAll}>
-            Share with everyone
+        <section className={styles.container}>
+          <header className={styles.sectionHeader}>
+            <p className={styles.eyebrow}>Closet remix</p>
+            <h1 className={styles.title}>
+              Do you want to create like this look?
+            </h1>
+            <p className={styles.description}>
+              Replace inspiration pieces with items from your closet to build a
+              personalised edit.
+            </p>
+          </header>
+
+          <button
+            type="button"
+            className={`${styles.toggle} ${isOpen ? styles.toggleOpen : ""}`}
+            onClick={handleShareAll}
+            aria-expanded={isOpen}
+            aria-controls="look-creator-panel"
+          >
+            <span>{isOpen ? "Hide look builder" : "Show look builder"}</span>
+            <Image
+              src={down}
+              alt="Toggle look builder"
+              className={`${styles.arrow} ${isOpen ? styles.open : ""}`}
+            />
           </button>
-        </div>
+        </section>
 
-
-        {/* Comments section */}
         <div className={styles.commentsSection}>
           <CommentForm
             lookId={look._id}
@@ -94,19 +119,32 @@ export default function LookPopup({ look, onClose }: Props) {
             comments.map((c: any, i: number) => (
               <div key={i} className={styles.comment}>
                 {c.profileImage ? (
-                  <img
+                  <Image
                     src={c.profileImage}
                     alt={c.userName}
-                    className={styles.profileImage}
+                    width={40}
+                    height={40}
+                    className={styles.commentAvatar}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/default-avatar.png";
+                    }}
                   />
                 ) : (
-                  <div className={styles.userAvatar}>
+                  <div className={styles.commentAvatarFallback}>
                     {c.userName?.charAt(0).toUpperCase() || "U"}
                   </div>
                 )}
 
                 <div className={styles.commentContent}>
-                  <div className={styles.commentHeader}>{c.userName}</div>
+                  <div className={styles.commentHeader}>
+                    <span className={styles.commentUserName}>{c.userName}</span>
+                    <span className={styles.commentDate}>
+                      {c.createdAt
+                        ? new Date(c.createdAt).toLocaleString("he-IL")
+                        : ""}
+                    </span>
+                  </div>
                   <p className={styles.commentText}>{c.text}</p>
                 </div>
               </div>

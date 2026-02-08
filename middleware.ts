@@ -1,22 +1,71 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const PROTECTED_PATHS = [
+  "/look",
+  "/closet",
+  "/profile",
+  "/looks",
+  "/create-look",
+  "/about",
+  "/complete-profile",
+  "/checklist",
+  "/mycloset",
+  "/mylooks",
+  "/newcloth",
+  "/stylefeed",
+  "/sharelookall",
+  "/sharelookpersonal",
+  "/sharelook",
+  "/home",
+];
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/look/")) {
-    const token = req.cookies.get("authToken"); 
-    if (!token) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/welcome";
-      url.searchParams.set("redirectLookId", pathname.split("/look/")[1]);
-      return NextResponse.redirect(url);
+  const isProtected = PROTECTED_PATHS.some((path) =>
+    pathname.startsWith(path)
+  );
+
+  if (!isProtected) return NextResponse.next();
+
+  const authToken = req.cookies.get("authToken")?.value;
+  const userId = req.cookies.get("userId")?.value;
+
+  const isLoggedIn = Boolean(authToken || userId);
+
+  if (!isLoggedIn) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/welcome";
+
+    if (pathname.startsWith("/look/")) {
+      const lookId = pathname.split("/look/")[1];
+      if (lookId) url.searchParams.set("redirectLookId", lookId);
     }
+
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/look/:path*"],
+  matcher: [
+    "/look/:path*",
+    "/closet/:path*",
+    "/profile/:path*",
+    "/looks/:path*",
+    "/create-look/:path*",
+    "/about/:path*",
+    "/complete-profile/:path*",
+    "/checklist/:path*",
+    "/mycloset/:path*",
+    "/mylooks/:path*",
+    "/newcloth/:path*",
+    "/stylefeed/:path*",
+    "/sharelookall/:path*",
+    "/sharelookpersonal/:path*",
+    "/sharelook/:path*",
+    "/home/:path*",
+  ],
 };

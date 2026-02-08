@@ -5,10 +5,15 @@ import Image from "next/image";
 import styles from "./NewLook.module.css";
 import down from "../../../public/down.png";
 import { useUserStore } from "../../../store/userStore";
+import { useToast } from "../Toast/ToastProvider";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClothingItem } from "@/types/clothTypes";
 import { LookType } from "@/types/lookTypes";
-import { analyzeImageColors } from "@/services/client/imageAnalysis";
+import {
+  RGB,
+  closestColorLAB,
+  getDominantColorsKMeans,
+} from "@/services/server/colorUtils";
 
 const postLook = async (look: LookType) => {
   const res = await fetch("/api/looks", {
@@ -38,7 +43,7 @@ const NewLook: FC<NewLookProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
+  const { showToast } = useToast();
   const userId = useUserStore((state) => state.userId);
   const queryClient = useQueryClient();
 
@@ -66,41 +71,44 @@ const NewLook: FC<NewLookProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setUploadedImage(reader.result as string);
-    };
+    reader.onloadend = () => setUploadedImage(reader.result as string);
     reader.readAsDataURL(file);
 
     setIsAnalyzing(true);
     setInspirationColors([]);
 
     try {
-      const colors = await analyzeImageColors(file);
-      setInspirationColors(colors);
-      console.log("Colors for filtering:", colors);
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const topColorsRGB = getDominantColorsKMeans(img, 4);
+        const colorNames = topColorsRGB.map(closestColorLAB);
+        setInspirationColors(colorNames);
+        console.log("Detected colors:", colorNames);
+        setIsAnalyzing(false);
+      };
     } catch (error) {
       console.error("Image analysis failed", error);
-      alert("Failed to analyze image colors.");
+      showToast("Failed to analyze image colors.", "error");
       setInspirationColors([]);
-    } finally {
       setIsAnalyzing(false);
     }
   };
 
   const mutation = useMutation({
     mutationFn: postLook,
-    onSuccess: (data) => {
-      console.log("Look saved:", data.look);
+    onSuccess: () => {
       setSelectedItems([]);
       handleClose();
-      alert("Look saved successfully!");
+      showToast("Look saved successfully!", "success");
       queryClient.invalidateQueries({ queryKey: ["looks"] });
     },
     onError: (error: any) => {
       console.error("Error saving Look:", error.message);
-      alert("Failed to save Look.");
+      showToast("Failed to save Look.", "error");
     },
   });
+
 
   const handleDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
     event.preventDefault();
@@ -109,6 +117,16 @@ const NewLook: FC<NewLookProps> = ({
 
     try {
       const item: ClothingItem = JSON.parse(data);
+
+      const categoryExists = selectedItems.some(
+        (i) => i.category.toLowerCase() === item.category.toLowerCase()
+      );
+
+      if (categoryExists) {
+        showToast(`You already added a ${item.category} to the look.`, "error");
+        return; 
+      }
+
       if (!selectedItems.some((i) => i._id === item._id)) {
         setSelectedItems((prev) => [...prev, item]);
       }
@@ -121,19 +139,16 @@ const NewLook: FC<NewLookProps> = ({
     event.preventDefault();
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: string) =>
     setSelectedItems((prev) => prev.filter((i) => i._id !== id));
-  };
 
   const saveLook = () => {
-    if (!userId) {
-      alert("User not found. Please log in.");
-      return;
-    }
-    if (selectedItems.length === 0) {
-      alert("Add at least one clothing item before saving!");
-      return;
-    }
+    if (!userId) return showToast("User not found. Please log in.", "error");
+    if (selectedItems.length === 0)
+      return showToast(
+        "Add at least one clothing item before saving!",
+        "error"
+      );
 
     const look: LookType = {
       _id: "",
@@ -151,11 +166,9 @@ const NewLook: FC<NewLookProps> = ({
   return (
     <section className={styles.container} aria-live="polite">
       <div className={styles.shell}>
-          {!isOpen ? (
+        {!isOpen ? (
           <div className={styles.introCard}>
-            <div
-              className={styles.introContent}
-            >
+            <div className={styles.introContent}>
               <div className={styles.introCopy}>
                 <p className={styles.cardEyebrow}>Create a look</p>
                 <h1 className={styles.cardTitle}>Craft your next outfit</h1>
@@ -216,6 +229,7 @@ const NewLook: FC<NewLookProps> = ({
                 Drag &amp; drop garments from your closet grid. Remove items any
                 time.
               </p>
+
               {lookMode === "inspiration" && (
                 <div className={styles.inspirationArea}>
                   {uploadedImage ? (
@@ -241,6 +255,7 @@ const NewLook: FC<NewLookProps> = ({
                         <h3>Look From Inspiration</h3>
                         <p>Upload a mood image to pull guiding colors.</p>
                       </div>
+
                       <label className={styles.fileField}>
                         <span>
                           {isAnalyzing ? "Analyzing..." : "Upload image"}
@@ -252,6 +267,7 @@ const NewLook: FC<NewLookProps> = ({
                           disabled={isAnalyzing}
                         />
                       </label>
+
                       {isAnalyzing && (
                         <p className={styles.analysisStatus}>
                           Analyzing image... Hang tight! ⏳
@@ -261,6 +277,7 @@ const NewLook: FC<NewLookProps> = ({
                   )}
                 </div>
               )}
+
               <div
                 className={`${styles.lookArea} ${
                   hasItems ? styles.lookAreaFilled : ""
@@ -297,7 +314,6 @@ const NewLook: FC<NewLookProps> = ({
             <div className={styles.actionBar}>
               <button
                 type="button"
-                className={styles.primaryButton}
                 onClick={saveLook}
                 disabled={mutation.isPending}
               >
@@ -305,7 +321,6 @@ const NewLook: FC<NewLookProps> = ({
               </button>
               <button
                 type="button"
-                className={styles.secondaryButton}
                 onClick={() => setSelectedItems([])}
                 disabled={!hasItems || mutation.isPending}
               >

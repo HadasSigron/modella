@@ -1,0 +1,202 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap");
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f9f8f6;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 30px 25px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+  width: 120px;
+  height: 120px;
+  background-color: #f9f9f9;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: 40px;
+  color: #555;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-left: 45px;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.avatar input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cameraIcon {
+  position: absolute;
+  font-size: 29px;
+  cursor: pointer;
+  color: #080808;
+  padding: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -46px;
+  background-color: #f9f8f67a;
+  border-radius: 50%;
+  z-index: 10;
+  margin-left: 8%;
+}
+
+.avatarText {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+.avatarName {
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.avatarEmail {
+  font-size: 14px;
+  color: #888;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+}
+
+.input,
+.select {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #6c63ff;
+}
+
+.actionsRow {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.primaryButton {
+  background-color: #080808;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.primaryButton:hover {
+
+  background-color: white;
+  color: black;
+}
+
+
+.passwordBlock {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.passwordText {
+  font-size: 14px;
+  color: #555;
+}
+
+.secondaryButton {
+  background-color: #080808;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.secondaryButton:hover {
+
+  background-color: white;
+  color: rgb(4, 4, 4);
+}
+
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.error {
+  background-color: #ffe0e0;
+  color: #d32f2f;
+}
+
+.success {
+  background-color: #e0ffe0;
+  color: #388e3c;
+}

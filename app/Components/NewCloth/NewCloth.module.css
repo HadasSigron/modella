@@ -20,7 +20,9 @@
   font-family: "Montserrat", sans-serif;
   margin-bottom: 40px;
 }
-
+.pageWrapper {
+  padding: 0 !important;
+}
 .pageTitle {
   font-family: "Playfair Display", serif;
   font-size: 3.5rem;
@@ -105,7 +107,7 @@
 
 .field label {
   font-weight: 500;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   color: #000;
 }
 
@@ -144,9 +146,17 @@
 .submitBtn:disabled {
   opacity: 0.6;
 }
-.pageWrapper {
-  padding: 0 !important;
-}
+
 .NewCloth-module___m-_kW__container {
   padding: 0 !important;
+}
+@media (max-width: 600px) {
+  .pageWrapper {
+    padding-left: 16px !important;
+        padding-right: 16px !important;
+
+  }
+  .imageBox {
+    height: 200px;
+  }
 }

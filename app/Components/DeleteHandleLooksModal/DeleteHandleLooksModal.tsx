@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import styles from "./DeleteHandleLooksModal.module.css";
+import { useToast } from "../Toast/ToastProvider";
 import { LookType as Look } from "@/types/lookTypes";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
   onComplete: (result: { updated: string[]; deleted: string[] }) => void;
   itemImageUrl?: string;
   itemCategory?: string;
+  userId: string;
 };
 
 type MutationResponse = {
@@ -37,8 +39,10 @@ const DeleteHandleLooksModal: React.FC<Props> = ({
   onComplete,
   itemImageUrl,
   itemCategory,
+  userId,
 }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [actions, setActions] = useState<Record<string, "update" | "delete">>(
     {}
   );
@@ -78,13 +82,14 @@ const DeleteHandleLooksModal: React.FC<Props> = ({
         deleted: data.deletedLooks ?? [],
       });
       queryClient.invalidateQueries({ queryKey: ["looks", clothingId] });
+      queryClient.invalidateQueries({ queryKey: ["clothes", userId] });
       queryClient.invalidateQueries({ queryKey: ["closet"] });
       queryClient.invalidateQueries({ queryKey: ["myLooks"] });
       queryClient.invalidateQueries({ queryKey: ["clothing", clothingId] });
 
       onClose();
     },
-    onError: () => alert("Error processing. Try again."),
+    onError: () => showToast("Error processing. Try again.", "error"),
   });
 
   const handleActionChange = (lookId: string, action: "update" | "delete") => {
@@ -103,6 +108,7 @@ const DeleteHandleLooksModal: React.FC<Props> = ({
 
   const previewImageUrl = useMemo(() => {
     if (itemImageUrl) return itemImageUrl;
+    if (!looks || looks.length === 0) return itemImageUrl ?? null;
 
     const containingLook = looks.find((look) =>
       look.items.some((item) => item._id === clothingId)
@@ -115,7 +121,7 @@ const DeleteHandleLooksModal: React.FC<Props> = ({
     if (matchedItem?.imageUrl) return matchedItem.imageUrl;
 
     const firstItem = looks[0]?.items[0];
-    return firstItem?.imageUrl ?? null;
+    return firstItem?.imageUrl ?? itemImageUrl ?? null;
   }, [looks, clothingId, itemImageUrl]);
 
   return (
